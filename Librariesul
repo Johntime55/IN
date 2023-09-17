@@ -1,0 +1,291 @@
+@using MyLibrary.ADClasses
+@{ var usrData = new UserInfo(); }
+
+@model IEnumerable<MyLibrary.Models.Library>
+
+@{
+    ViewBag.Title = "Index";
+}
+
+<style>
+
+
+    table.table {
+        text-align: center;
+        margin: 0 auto;
+    }
+
+    table-container table {
+        width: 100%;
+        border-collapse: collapse;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .table-container table th {
+        background-color: #333;
+        color: #fff;
+    }
+
+    .table-container table th,
+    .table-container table td {
+        padding: 10px;
+        text-align: center;
+        vertical-align: middle;
+        border: 1px solid #ddd;
+    }
+
+    .action-buttons {
+        display: flex;
+        justify-content: center;
+    }
+
+        .action-buttons a {
+            margin: 5px;
+        }
+</style>
+
+@if (!string.IsNullOrEmpty(TempData["ErrorMessage"] as string))
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+@if (!string.IsNullOrEmpty(TempData["SuccessMessage"] as string))
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+@if (usrData.checkIfUserIsAdmin())
+{
+    <h2 class="text-center mb-4">Admin Books</h2>
+
+    <div class="text-center mb-4">
+        @Html.ActionLink("Create New Book", "Create", null, new { @class = "btn btn-warning" })
+    </div>
+
+    <div class="table-container">
+        <table class="table table-bordered table-striped shadow">
+            <tr>
+                <th>@Html.DisplayNameFor(model => model.BookName)</th>
+                <th>@Html.DisplayNameFor(model => model.Author)</th>
+                <th>@Html.DisplayNameFor(model => model.Isbn13)</th>
+                <th>@Html.DisplayNameFor(model => model.Isbn10)</th>
+                <th>@Html.DisplayNameFor(model => model.Publisher)</th>
+                <th>@Html.DisplayNameFor(model => model.YearPublished)</th>
+                <th>@Html.DisplayNameFor(model => model.CoverImage)</th>
+                <th>@Html.DisplayNameFor(model => model.QtyAvailable)</th>
+                <th>Actions</th>
+            </tr>
+
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@Html.DisplayFor(modelItem => item.BookName)</td>
+                    <td>@Html.DisplayFor(modelItem => item.Author)</td>
+                    <td>@Html.DisplayFor(modelItem => item.Isbn13)</td>
+                    <td>@Html.DisplayFor(modelItem => item.Isbn10)</td>
+                    <td>@Html.DisplayFor(modelItem => item.Publisher)</td>
+                    <td>@Html.DisplayFor(modelItem => item.YearPublished)</td>
+                    <td>
+                        <img src="@item.CoverImage" class="img-thumbnail" alt="" width="50" height="150" />
+                    </td>
+                    <td>@Html.DisplayFor(modelItem => item.QtyAvailable)</td>
+                    <td class="action-buttons">
+                        @Html.ActionLink("Edit", "Edit", new { id = item.id }, new { @class = "btn btn-danger btn-sm" })
+                        @Html.ActionLink("Delete", "Delete", new { id = item.id }, new { @class = "btn btn-primary btn-sm" })
+                    </td>
+                </tr>
+            }
+        </table>
+    </div>
+}
+
+
+
+
+
+
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.Entity;
+using System.Linq;
+using System.Net;
+using System.Web;
+using System.Web.Mvc;
+using MyLibrary.Models;
+
+
+namespace MyLibrary.Controllers
+{
+    public class LibrariesController : Controller
+    {
+        private I_CoposEntities db = new I_CoposEntities();
+
+        // GET: Libraries
+        public ActionResult Index()
+        {
+            return View(db.Libraries.OrderBy(p => p.Author).Distinct().ToList());
+        }
+
+       
+
+        // GET: Libraries/Create
+        public ActionResult Create()
+        {
+            return View();
+        }
+
+        // POST: Libraries/Create
+        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
+        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
+        // POST: Libraries/Create
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Create([Bind(Include = "id,BookName,Author,Isbn13,Isbn10,Publisher,YearPublished,CoverImage,QtyAvailable")] Library library)
+        {
+            if (ModelState.IsValid)
+            {
+                db.Libraries.Add(library);
+                db.SaveChanges();
+
+                BooksAvailable bookAvailable = new BooksAvailable
+                {
+                    id = library.id,
+                    BookName = library.BookName,
+                    Author = library.Author,
+                    Isbn13 = library.Isbn13,
+                    Isbn10 = library.Isbn10,
+                    Publisher = library.Publisher,
+                    YearPublished = library.YearPublished,
+                    CoverImage = library.CoverImage,
+                    QtyAvailable = library.QtyAvailable
+                };
+                db.BooksAvailables.Add(bookAvailable);
+                db.SaveChanges();
+
+                TempData["SuccessMessage"] = "The series for this book has been created successfully!";
+
+                return RedirectToAction("Index");
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Series for this book could not be created!";
+            }
+
+            return View(library);
+        }
+
+        // GET: Libraries/Edit/5
+        public ActionResult Edit(int? id)
+        {
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            Library library = db.Libraries.Find(id);
+            if (library == null)
+            {
+                return HttpNotFound();
+            }
+            return View(library);
+        }
+
+        // POST: Libraries/Edit/5
+        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
+        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Edit([Bind(Include = "id,BookName,Author,Isbn13,Isbn10,Publisher,YearPublished,CoverImage,QtyAvailable")] Library library)
+        {
+            if (ModelState.IsValid)
+            {
+                db.Entry(library).State = EntityState.Modified;
+                db.SaveChanges();
+                //Actualizm detaliile in tabela BooksAvailables
+                var bookAvailable = db.BooksAvailables.FirstOrDefault(b => b.BookName == library.BookName);
+                if (bookAvailable != null)
+                {
+                    bookAvailable.QtyAvailable =library.QtyAvailable;
+                    db.SaveChanges();
+                }
+
+                return RedirectToAction("Index");
+            }
+            return View(library);
+        }
+
+
+
+        // GET: Libraries/Delete/5
+        public ActionResult Delete(int? id)
+        {
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            Library library = db.Libraries.Find(id);
+            if (library == null)
+            {
+                return HttpNotFound();
+            }
+            return View(library);
+        }
+
+
+        // POST: Libraries/Delete/5
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public ActionResult DeleteConfirmed(int id)
+        {
+            //We check if the book is borrowed in Borrow
+            bool isBookBorrowed = db.Barrows.Any(b => b.BorrowedBookId == id);
+            //Check if the book is in the waiting list
+            bool isBookInWaitlist = db.Waitlists.Any(w => w.WaitlistId == id);
+
+            if (isBookBorrowed)
+            {
+                TempData["ErrorMessage"] = "The book is borrowed, you cannot delete it!!!!!!";
+            }
+            else if (isBookInWaitlist)
+            {
+                TempData["ErrorMessage"] = "The book is in the waiting list, you cannot delete it!!!!!!!!!!";
+            }
+            else
+            {
+           
+                Library library = db.Libraries.Find(id);
+                if (library == null)
+                {
+                    return HttpNotFound();
+                }
+
+              
+                db.Libraries.Remove(library);
+
+                // Look for the book in the BooksAvailables table and delete it if it exists
+                BooksAvailable bookAvailable = db.BooksAvailables.FirstOrDefault(ba => ba.id == id);
+                if (bookAvailable != null)
+                {
+                    db.BooksAvailables.Remove(bookAvailable);
+                }
+
+                db.SaveChanges();
+
+                TempData["SuccessMessage"] = "The book was successfully deleted.";
+            }
+
+            return RedirectToAction("Index");
+        }
+
+       
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                db.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+    }
+}
