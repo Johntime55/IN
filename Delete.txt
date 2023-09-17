@@ -1,0 +1,91 @@
+<div id="deleteConfirmModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeDeleteConfirmModal()">&times;</span>
+        <h2>Confirm Delete</h2>
+        <p>Are you sure you want to delete this book?</p>
+        <div class="form-group">
+            <button type="button" onclick="confirmDelete()" class="btn btn-danger">Yes</button>
+            <button type="button" onclick="closeDeleteConfirmModal()" class="btn btn-secondary">No</button>
+        </div>
+    </div>
+</div>
+
+
+
+
+var bookIdToDelete = 0;
+
+function openDeleteConfirmModal(bookId) {
+    bookIdToDelete = bookId;
+    document.getElementById("deleteConfirmModal").style.display = "block";
+}
+
+function closeDeleteConfirmModal() {
+    document.getElementById("deleteConfirmModal").style.display = "none";
+}
+
+function confirmDelete() {
+    $.ajax({
+        type: "POST",
+        url: "/Libraries/DeleteConfirmed/" + bookIdToDelete,
+        success: function (data) {
+            if (data.success) {
+                alert(data.message);
+                closeDeleteConfirmModal();
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        },
+        error: function (error) {
+            alert("An error occurred: " + error.statusText);
+        }
+    });
+}
+
+
+
+[HttpPost, ActionName("DeleteConfirmed")]
+[ValidateAntiForgeryToken]
+public ActionResult DeleteConfirmed(int id)
+{
+    // Verificați dacă cartea este împrumutată sau în lista de așteptare
+    bool isBookBorrowed = db.Barrows.Any(b => b.BorrowedBookId == id);
+    bool isBookInWaitlist = db.Waitlists.Any(w => w.WaitlistId == id);
+
+    if (isBookBorrowed)
+    {
+        return Json(new { success = false, message = "The book is borrowed, you cannot delete it!" });
+    }
+    else if (isBookInWaitlist)
+    {
+        return Json(new { success = false, message = "The book is in the waiting list, you cannot delete it!" });
+    }
+    else
+    {
+        Library library = db.Libraries.Find(id);
+        if (library == null)
+        {
+            return Json(new { success = false, message = "Book not found." });
+        }
+
+        db.Libraries.Remove(library);
+
+        // Căutați cartea în tabela BooksAvailables și ștergeți-o dacă există
+        BooksAvailable bookAvailable = db.BooksAvailables.FirstOrDefault(ba => ba.id == id);
+        if (bookAvailable != null)
+        {
+            db.BooksAvailables.Remove(bookAvailable);
+        }
+
+        db.SaveChanges();
+
+        return Json(new { success = true, message = "The book was successfully deleted." });
+    }
+}
+
+
+<td class="action-buttons">
+    @Html.ActionLink("Edit", "Edit", new { id = item.id }, new { @class = "btn btn-danger btn-sm" })
+    <button type="button" class="btn btn-primary btn-sm" onclick="openDeleteConfirmModal(@item.id)">Delete</button>
+</td>

@@ -1,0 +1,204 @@
+[HttpPost]
+[ValidateAntiForgeryToken]
+public ActionResult Create([Bind(Include = "id,BookName,Author,Isbn13,Isbn10,Publisher,YearPublished,CoverImage,QtyAvailable")] Library library)
+{
+    if (ModelState.IsValid)
+    {
+        try
+        {
+            db.Libraries.Add(library);
+            db.SaveChanges();
+
+            BooksAvailable bookAvailable = new BooksAvailable
+            {
+                id = library.id,
+                BookName = library.BookName,
+                Author = library.Author,
+                Isbn13 = library.Isbn13,
+                Isbn10 = library.Isbn10,
+                Publisher = library.Publisher,
+                YearPublished = library.YearPublished,
+                CoverImage = library.CoverImage,
+                QtyAvailable = library.QtyAvailable
+            };
+            db.BooksAvailables.Add(bookAvailable);
+            db.SaveChanges();
+
+            // Returnați un răspuns JSON care indică succesul
+            return Json(new { success = true, message = "The series for this book has been created successfully!" });
+        }
+        catch (Exception ex)
+        {
+            // În caz de eroare, returnați un răspuns JSON care indică eroarea
+            return Json(new { success = false, message = "An error occurred while creating the book: " + ex.Message });
+        }
+    }
+    else
+    {
+        // Dacă ModelState nu este valid, returnați un răspuns JSON care indică eroarea
+        return Json(new { success = false, message = "Validation failed. The book could not be created." });
+    }
+}
+
+
+
+
+
+
+<div id="createModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h2>Create New Book</h2>
+        <form id="createForm" method="post">
+            @Html.AntiForgeryToken()
+            
+            <label for="BookName">Book Name:</label>
+            <input type="text" id="BookName" name="BookName" required>
+            
+            <label for="Author">Author:</label>
+            <input type="text" id="Author" name="Author" required>
+            
+            <label for="Isbn13">ISBN-13:</label>
+            <input type="text" id="Isbn13" name="Isbn13" required>
+            
+            <label for="Isbn10">ISBN-10:</label>
+            <input type="text" id="Isbn10" name="Isbn10" required>
+            
+            <label for="Publisher">Publisher:</label>
+            <input type="text" id="Publisher" name="Publisher" required>
+            
+            <label for="YearPublished">Year Published:</label>
+            <input type="text" id="YearPublished" name="YearPublished" required>
+            
+            <label for="CoverImage">Cover Image URL:</label>
+            <input type="text" id="CoverImage" name="CoverImage" required>
+            
+            <label for="QtyAvailable">Quantity Available:</label>
+            <input type="number" id="QtyAvailable" name="QtyAvailable" required>
+            
+            <button type="button" onclick="createBook()">Create</button>
+        </form>
+    </div>
+</div>
+
+
+
+  <!-- JavaScript pentru gestionarea modalului și cererii AJAX (nemodificat) -->
+    <script>
+        function openModal() {
+            document.getElementById("createModal").style.display = "block";
+        }
+
+        function closeModal() {
+            document.getElementById("createModal").style.display = "none";
+        }
+
+        function createBook() {
+            var bookData = {
+                BookName: document.getElementById("BookName").value,
+                // Adăugați aici toate celelalte câmpuri
+            };
+
+            $.ajax({
+                type: "POST",
+                url: "/Libraries/Create",
+                data: bookData,
+                success: function (response) {
+                    if (response.success) {
+                        // Afișați un mesaj de succes și închideți modalul
+                        alert(response.message);
+                        closeModal();
+                    } else {
+                        // Afișați un mesaj de eroare
+                        alert("Error: " + response.message);
+                    }
+                },
+                error: function (error) {
+                    // Gestionați erorile de rețea sau de server
+                    alert("An error occurred: " + error.statusText);
+                }
+            });
+        }
+    </script>
+</script>
+
+
+<button onclick="openModal()" class="btn btn-warning">Create New Book</button>
+
+
+<button type="button" onclick="createBook()">Create</button>
+
+
+
+function createBook() {
+    var bookData = {
+        BookName: document.getElementById("BookName").value,
+        Author: document.getElementById("Author").value,
+        Isbn13: document.getElementById("Isbn13").value,
+        Isbn10: document.getElementById("Isbn10").value,
+        Publisher: document.getElementById("Publisher").value,
+        YearPublished: document.getElementById("YearPublished").value,
+        CoverImage: document.getElementById("CoverImage").value,
+        QtyAvailable: document.getElementById("QtyAvailable").value
+    };
+
+    // Trimiterea datelor către server pentru crearea cărții
+    $.ajax({
+        type: "POST",
+        url: "/Libraries/Create", // Actualizați cu URL-ul corespunzător
+        data: bookData,
+        success: function (response) {
+            // Verificați răspunsul de la server și gestionați-l corespunzător
+
+            // Închideți modalul după crearea cu succes a cărții
+            closeModal();
+        },
+        error: function (error) {
+            // Gestionați eroarea în caz de problemă la crearea cărții
+        }
+    });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 10% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+}
+
+.close {
+    color: #888;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover {
+    color: #000;
+    cursor: pointer;
+}

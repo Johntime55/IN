@@ -1,0 +1,163 @@
+<!-- Modal edit -->
+<div id="editModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeEditModal()">&times;</span>
+        <h2>Edit Book</h2>
+        <form id="editForm" method="post">
+            @Html.AntiForgeryToken()
+            <!-- Câmpurile pentru editare -->
+            <div class="form-group">
+                <label for="BookName">Book Name:</label>
+                <input type="text" id="BookName" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="Author">Author:</label>
+                <input type="text" id="Author" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="Isbn13">ISBN-13:</label>
+                <input type="text" id="Isbn13" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="Isbn10">ISBN-10:</label>
+                <input type="text" id="Isbn10" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="Publisher">Publisher:</label>
+                <input type="text" id="Publisher" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="YearPublished">Year Published:</label>
+                <input type="text" id="YearPublished" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="CoverImage">Cover Image URL:</label>
+                <input type="text" id="CoverImage" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="QtyAvailable">Quantity Available:</label>
+                <input type="number" id="QtyAvailable" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <button type="button" onclick="saveEdit()" class="btn btn-primary">Save</button>
+                <button type="button" onclick="closeEditModal()" class="btn btn-secondary">Close</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+
+<!-- JavaScript pentru Edit -->
+<script>
+    var bookIdToEdit = 0;
+
+    function openEditModal(bookId) {
+        bookIdToEdit = bookId;
+        $.ajax({
+            type: "GET",
+            url: "/Libraries/GetBookDetails/" + bookId,
+            success: function (data) {
+                if (data.success) {
+                    document.getElementById("BookName").value = data.book.BookName;
+                    document.getElementById("Author").value = data.book.Author;
+                    document.getElementById("Isbn13").value = data.book.Isbn13;
+                    document.getElementById("Isbn10").value = data.book.Isbn10;
+                    document.getElementById("Publisher").value = data.book.Publisher;
+                    document.getElementById("YearPublished").value = data.book.YearPublished;
+                    document.getElementById("CoverImage").value = data.book.CoverImage;
+                    document.getElementById("QtyAvailable").value = data.book.QtyAvailable;
+                    document.getElementById("editModal").style.display = "block";
+                } else {
+                    alert(data.message);
+                }
+            },
+            error: function (error) {
+                alert("An error occurred: " + error.statusText);
+            }
+        });
+    }
+
+    function closeEditModal() {
+        document.getElementById("editModal").style.display = "none";
+    }
+
+    function saveEdit() {
+        var editedData = {
+            id: bookIdToEdit,
+            BookName: document.getElementById("BookName").value,
+            Author: document.getElementById("Author").value,
+            Isbn13: document.getElementById("Isbn13").value,
+            Isbn10: document.getElementById("Isbn10").value,
+            Publisher: document.getElementById("Publisher").value,
+            YearPublished: document.getElementById("YearPublished").value,
+            CoverImage: document.getElementById("CoverImage").value,
+            QtyAvailable: document.getElementById("QtyAvailable").value
+        };
+
+        $.ajax({
+            type: "POST",
+            url: "/Libraries/Edit",
+            data: editedData,
+            success: function (response) {
+                if (response.success) {
+                    alert(response.message);
+                    closeEditModal();
+                    location.reload();
+                } else {
+                    alert(response.message);
+                }
+            },
+            error: function (error) {
+                alert("An error occurred: " + error.statusText);
+            }
+        });
+    }
+</script>
+
+
+
+[HttpGet]
+public ActionResult GetBookDetails(int id)
+{
+    var book = db.Libraries.Find(id);
+    if (book == null)
+    {
+        return Json(new { success = false, message = "Book not found." }, JsonRequestBehavior.AllowGet);
+    }
+
+    return Json(new { success = true, book = book }, JsonRequestBehavior.AllowGet);
+}
+
+
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public ActionResult Edit([Bind(Include = "id,BookName,Author,Isbn13,Isbn10,Publisher,YearPublished,CoverImage,QtyAvailable")] Library library)
+{
+    if (ModelState.IsValid)
+    {
+        db.Entry(library).State = EntityState.Modified;
+        db.SaveChanges();
+        
+        //Actualizați detaliile în tabela BooksAvailables
+        var bookAvailable = db.BooksAvailables.FirstOrDefault(b => b.BookName == library.BookName);
+        if (bookAvailable != null)
+        {
+            bookAvailable.QtyAvailable = library.QtyAvailable;
+            db.SaveChanges();
+        }
+
+        // Întoarceți datele cărții în format JSON
+        return Json(new { success = true, message = "Book updated successfully", book = library });
+    }
+
+    // Întoarceți un mesaj de eroare în format JSON dacă validarea a eșuat
+    return Json(new { success = false, message = "Validation failed" });
+}
+
+
+
+<button onclick="openEditModal(@item.id)" class="btn btn-primary">Edit</button>
