@@ -1,0 +1,245 @@
+using System;
+using System.Linq;
+using System.Web.Mvc;
+using MyLibrary.Models;
+using System.Data.Entity;
+using System.Net;
+using MyLibrary.ADClasses;
+
+namespace MyLibrary.Controllers
+{
+    public class WaitListController : Controller
+    {
+        private I_CoposEntities db = new I_CoposEntities(); 
+        UserInfo user = new UserInfo(); 
+
+        public ActionResult MyWaitList()
+        {
+            return View(db.Waitlists.OrderBy(p => p.WaitlistId).Distinct().ToList());
+        }
+
+
+        [HttpPost]
+        public ActionResult ReturnBook(int WaitlistId)
+        {
+            
+                var waitlistedBook = db.Waitlists.Find(WaitlistId);
+
+                if (waitlistedBook != null && !waitlistedBook.IsValidated && waitlistedBook.ReturnDate.HasValue)
+                {
+
+                    waitlistedBook.IsReturned = true;
+                    waitlistedBook.ReturnDate = DateTime.Now;
+
+                db.SaveChanges();
+
+                    var bookAvailable = db.BooksAvailables.FirstOrDefault(b => b.Isbn13 == waitlistedBook.BookISBN);
+
+                    if (bookAvailable != null)
+                    {
+                        bookAvailable.QtyAvailable++;
+                        db.SaveChanges();
+                    }
+
+                    db.SaveChanges();
+                    TempData["SuccesMessage"] = "Succes!";
+                    return RedirectToAction("MyWaitlist");
+                }
+            else
+            {
+              
+                TempData["ErrorMessage"] = "Error!";
+                return RedirectToAction("MyWaitlist");
+            }
+               
+        }
+            
+    
+
+     
+        public ActionResult Join()
+        {
+            ViewBag.ErrorMessage = TempData["ErrorMessage"];
+            ViewBag.SuccessMessage = TempData["SuccessMessage"];
+
+            return View();
+        }
+
+        [HttpPost]
+        // Action for processing the waitlist entry for a book
+        public ActionResult Join(string isbn13)
+        {
+            if (string.IsNullOrEmpty(isbn13) || isbn13.Length != 13)
+            {
+                TempData["ErrorMessage"] = "ISBN-13 must be 13 digits long.";
+                return RedirectToAction("Join");
+            }
+
+            var book = db.BooksAvailables.FirstOrDefault(b => b.Isbn13 == isbn13);
+
+            if (book == null)
+            {
+                TempData["ErrorMessage"] = "The book with this ISBN-13 does not exist in the library.";
+                return RedirectToAction("Join");
+            }
+
+            if (user.isLoggedIn())
+            {
+                string currentUserId = getUserName();
+
+                if (book.QtyAvailable >= -500)
+                {
+
+                    book.QtyAvailable--;
+
+                    Waitlist waitlistedBook = new Waitlist
+                    {
+                        UserId = currentUserId,
+                        BookName = book.BookName,
+                        BookISBN = book.Isbn13,
+                        RegistrationDate = DateTime.Now,
+                        ReturnDate = DateTime.Now.AddDays(1)
+                    };
+
+                    db.Waitlists.Add(waitlistedBook);
+                    db.SaveChanges();
+
+                    var response = new
+                    {
+                        Success = true,
+                        Message = "The book has been borrowed successfully"
+                    };
+                    return Json(response);
+                }
+                else
+                {
+                    var response = new
+                    {
+                        Success = false,
+                        Message = "Error"
+                    };
+                    return Json(response);
+                }
+            }
+            else
+            {
+                return RedirectToAction("LoginPage", "Account");
+            }
+        }
+
+        public string getUserName()
+        {
+            UserInfo user = new UserInfo();
+            return user.getUsername();
+        }
+
+   
+    }
+}
+
+@model List<MyLibrary.Models.Waitlist>
+
+@{
+    ViewBag.Title = "My WaitList Books";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>My Waitlist</h2>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<style>
+    .table {
+        text-align: center;
+        margin: 0 auto;
+    }
+
+        .table th {
+            background-color: #333;
+            color: #fff;
+        }
+
+    .modal-title {
+        text-align: center;
+    }
+
+    .modal-body {
+        text-align: center;
+    }
+
+    .modal-footer {
+        justify-content: center;
+    }
+</style>
+
+
+
+@if (!string.IsNullOrEmpty(TempData["ErrorMessage"] as string))
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+@if (!string.IsNullOrEmpty(TempData["SuccessMessage"] as string))
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>User Name</th>
+            <th>Book Name</th>
+            <th>ISBN</th>
+            <th>Registration Date</th>
+            <th>Return Date</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var book in Model)
+        {
+            <tr>
+
+                <td>@book.WaitlistId</td>
+                <td>@book.UserId</td>
+                <td>@book.BookName</td>
+                <td>@book.BookISBN</td>
+                <td>@book.RegistrationDate</td>
+                <td>@book.ReturnDate</td>
+                <td>
+                    @if (book.IsReturned == true)
+                    {
+                        <text>Close Action</text>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#returnModal-@book.WaitlistId">Action</button>
+
+                        <div class="modal fade" id="returnModal-@book.WaitlistId" tabindex="-1" role="dialog" aria-labelledby="returnModalLabel-@book.WaitlistId" aria-hidden="true">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="returnModalLabel-@book.WaitlistId">Confirmation Action</h5>
+                                    </div>
+                                    <div class="modal-body">
+                                        Are you sure you want to return this book from the waiting list?
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">No</button>
+                                        @*<a href="@Url.Action("MyBorrowedBooks", "BorrowBook", new { BorrowedBookId = book.BorrowedBookId })" class="btn btn-primary">Yes</a>*@
+                                        @using (Html.BeginForm("ReturnBook", "Waitlist", new { WaitlistId = book.WaitlistId }, FormMethod.Post))
+                                        {
+                                            <button type="submit" class="btn btn-warning">YES</button>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
