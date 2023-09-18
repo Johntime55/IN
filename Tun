@@ -1,0 +1,43 @@
+!-- Modal de confirmare pentru ștergere -->
+<div id="deleteConfirmModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeDeleteConfirmModal()">&times;</span>
+        <h2>Confirm Delete</h2>
+        <p>Are you sure you want to delete this book?</p>
+        <div class="form-group">
+            <button type="button" onclick="confirmDelete()" class="btn btn-danger">Yes</button>
+            <button type="button" onclick="closeDeleteConfirmModal()" class="btn btn-secondary">No</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pentru afișarea mesajului -->
+<div id="messageModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeMessageModal()">&times;</span>
+        <h2>Message</h2>
+        <p id="messageText"></p>
+    </div>
+</div>
+
+
+
+var bookIdToDelete = 0;
+
+function openDeleteConfirmModal(bookId) {
+    bookIdToDelete = bookId;
+    document.getElementById("deleteConfirmModal").style.display = "block";
+}
+
+function closeDeleteConfirmModal() {
+    document.getElementById("deleteConfirmModal").style.display = "none";
+}
+
+function confirmDelete() {
+    $.ajax({
+        type: "POST",
+        url: "/Libraries/DeleteConfirmed/" + bookIdToDelete,
+        success: function (data) {
+            if (data.success) {
+                // Afișează mesajul din server în modalul de mesaj
+                document.getElementById("messageText").innerHTML = data.message;￼Enter
