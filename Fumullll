@@ -1,0 +1,45 @@
+var bookIdToDelete = 0;
+
+function openDeleteConfirmationModal(bookId) {
+    bookIdToDelete = bookId;
+    document.getElementById("deleteConfirmationModal").style.display = "block";
+}
+
+function closeDeleteConfirmationModal() {
+    document.getElementById("deleteConfirmationModal").style.display = "none";
+}
+
+function confirmDelete() {
+    $.ajax({
+        type: "POST",
+        url: "/Libraries/DeleteConfirmed/" + bookIdToDelete,
+        success: function (data) {
+            if (data.success) {
+                // Cartea a fost ștearsă cu succes. Afișăm mesajul de confirmare.
+                document.getElementById("deleteSuccessMessage").style.display = "block";
+                closeDeleteConfirmationModal();
+                location.reload();
+            } else if (data.isBorrowed) {
+                // Cartea este împrumutată. Afișăm mesajul de avertizare.
+                openDeleteWarningModal();
+            } else if (data.isInWaitlist) {
+                // Cartea este în Waitlist. Afișăm mesajul de avertizare.
+                openDeleteWarningModal();
+            } else {
+                // Alte erori. Afișăm un mesaj generic de eroare.
+                alert("An error occurred: " + data.message);
+            }
+        },
+        error: function (error) {
+            alert("An error occurred: " + error.statusText);
+        }
+    });
+}
+
+function openDeleteWarningModal() {
+    document.getElementById("deleteWarningModal").style.display = "block";
+}
+
+function closeDeleteWarningModal() {
+    document.getElementById("deleteWarningModal").style.display = "none";
+}
