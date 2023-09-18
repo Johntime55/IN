@@ -1,0 +1,12 @@
+<!-- Modal pentru avertizarea cărții împrumutate sau în Waitlist -->
+<div id="deleteWarningModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeDeleteWarningModal()">&times;</span>
+        <h2>Atenție!</h2>
+        <p>Cartea este împrumutată sau se află în Waitlist. Nu poate fi ștearsă.</p>
+        <div class="form-group">
+            <button type="button" onclick="closeDeleteWarningModal()" class="btn btn-primary">Înțelege</button>
+        </div>
+    </div>
+</div>
+￼Enter
