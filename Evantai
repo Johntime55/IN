@@ -1,0 +1,39 @@
+// Funcția pentru afișarea modalului de Borrow Confirmation
+function borrowBook(isbn13) {
+    $('#borrowModal').modal('show');
+
+    $('#confirmBorrowButton').click(function () {
+        $.ajax({
+            type: "POST",
+            url: "/BorrowBook/Borrow",
+            data: { isbn13: isbn13 },
+            success: function (response) {
+                if (response.Success) {
+                    $('#borrowModal').modal('hide');
+                    $('#successBorrowModal').modal('show'); // Afișează modalul de confirmare pentru împrumut cu succes
+                    location.reload();
+                } else {
+                    // Afișează aici un mesaj de eroare dacă este cazul.
+                }
+            },
+            error: function () {
+                // Afișează aici un mesaj de eroare dacă este cazul.
+            }
+        });
+    });
+
+    $('#borrowModal').on('hidden.bs.modal', function () {
+        $('#confirmBorrowButton').off('click');
+    });
+}
+
+// Funcția pentru închiderea modalului de Borrow Confirmation
+function closeBorrowModal() {
+    $('#borrowModal').modal('hide');
+}
+
+// Funcția pentru închiderea modalului de Confirmare Împrumut cu Succes
+function closeSuccessBorrowModal() {
+    $('#successBorrowModal').modal('hide');
+}
+￼Enter
