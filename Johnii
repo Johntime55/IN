@@ -1,0 +1,68 @@
+!-- Modal pentru Waitlist -->
+<div id="waitlistModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="waitlistModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="waitlistModalLabel">Join Waitlist</h5>
+            </div>
+            <div class="modal-body">
+                <p>Do you want to join the waitlist for this book?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                <button type="button" class="btn btn-warning" id="confirmWaitlistButton">Yes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<!-- Modal pentru Confirmare Adăugare cu Succes în Waitlist -->
+<div class="modal fade" id="successWaitlistModal" tabindex="-1" role="dialog" aria-labelledby="successWaitlistModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="successWaitlistModalLabel">Cartea a fost adăugată cu succes în lista de așteptare</h5>
+            </div>
+            <div class="modal-body">
+                Cartea a fost adăugată cu succes în lista de așteptare.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Închide</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+// Waitlist
+function joinWaitlist(isbn13) {
+    $('#waitlistModal').modal('show');
+
+    $('#confirmWaitlistButton').click(function () {
+        $.ajax({
+            type: "POST",
+            url: "/Waitlist/Join",
+            data: { isbn13: isbn13 },
+            success: function (response) {
+                if (response.Success) {
+                    $('#waitlistModal').modal('hide'); // Închide modalul de confirmare pentru Waitlist
+
+                    // Afișări mesaj de succes sau orice altă acțiune aici
+                    $('#successWaitlistModal').modal('show'); // Afișează modalul de confirmare pentru adăugare cu succes în Waitlist
+                } else {
+                    // Afișați aici un mesaj de eroare dacă este cazul.
+                }
+            },
+            error: function () {
+                // Afișați aici un mesaj de eroare dacă este cazul.
+            }
+        });
+    });
+
+    $('#waitlistModal').on('hidden.bs.modal', function () {
+        $('#confirmWaitlistButton').off('click');
+    });
+}
