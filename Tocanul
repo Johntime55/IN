@@ -1,0 +1,75 @@
+public ActionResult Borrow(string isbn13)
+{
+    if (user.isLoggedIn()) // Verificăm dacă utilizatorul este autentificat
+    {
+        string currentUserId = getUserName();
+
+        // Verificăm dacă utilizatorul a atins deja limita de 5 cărți împrumutate
+        int borrowedBookCount = db.Barrows.Count(b => b.UserId == currentUserId && !b.IsReturned);
+        if (borrowedBookCount >= 5)
+        {
+            var response = new
+            {
+                Success = false,
+                Message = "You have reached the maximum limit of borrowed books (5)."
+            };
+            return Json(response);
+        }
+
+        // Verificăm dacă cartea este disponibilă
+        var book = db.BooksAvailables.FirstOrDefault(b => b.Isbn13 == isbn13);
+        if (book != null && book.QtyAvailable > 0)
+        {
+            // Verificăm dacă utilizatorul a împrumutat deja aceeași carte
+            bool alreadyBorrowed = db.Barrows.Any(b => b.UserId == currentUserId && b.BookISBN == isbn13 && !b.IsReturned);
+            if (alreadyBorrowed)
+            {
+                var response = new
+                {
+                    Success = false,
+                    Message = "You have already borrowed this book."
+                };
+                return Json(response);
+            }
+
+            // Împrumutăm cartea
+            book.QtyAvailable--;
+            Barrow borrowedBook = new Barrow
+            {
+                UserId = currentUserId,
+                BookName = book.BookName,
+                BookISBN = book.Isbn13,
+                BorrowDate = DateTime.Now,
+                ReturnDate = DateTime.Now.AddDays(14)
+            };
+
+            db.Barrows.Add(borrowedBook);
+            db.SaveChanges();
+
+            var borrowResponse = new
+            {
+                Success = true,
+                Message = "The book has been borrowed successfully."
+            };
+            return Json(borrowResponse);
+        }
+        else
+        {
+            var response = new
+            {
+                Success = false,
+                Message = "The book is not available for borrowing."
+            };
+            return Json(response);
+        }
+    }
+    else
+    {
+        var response = new
+        {
+            Success = false,
+            Message = "You must be logged in to borrow a book."
+        };
+        return Json(response);
+    }
+}
