@@ -1,0 +1,54 @@
+public ActionResult Borrow(string isbn13)
+{
+    if (!user.isLoggedIn())
+    {
+        return RedirectToAction("LoginPage", "Account");
+    }
+
+    string currentUserId = getUserName();
+    int maxAllowedBooks = 5; // Numărul maxim de cărți permise
+    var response = new { Success = false, Message = "" };
+
+    // Verificăm dacă utilizatorul a atins deja numărul maxim de cărți împrumutate
+    int userBorrowedBooksCount = db.Barrows.Count(b => b.UserId == currentUserId && !b.IsReturned);
+    if (userBorrowedBooksCount >= maxAllowedBooks)
+    {
+        response.Message = "Ați atins limita maximă de cărți împrumutate.";
+        return Json(response);
+    }
+
+    // Verificăm dacă cartea este disponibilă pentru împrumut
+    var book = db.BooksAvailables.FirstOrDefault(b => b.Isbn13 == isbn13);
+    if (book == null || book.QtyAvailable <= 0)
+    {
+        response.Message = "Această carte nu este disponibilă pentru împrumut.";
+        return Json(response);
+    }
+
+    // Verificăm dacă utilizatorul a împrumutat deja această carte
+    var existingBorrowedBook = db.Barrows.FirstOrDefault(b => b.UserId == currentUserId && b.BookISBN == isbn13 && !b.IsReturned);
+    if (existingBorrowedBook != null)
+    {
+        response.Message = "Ați împrumutat deja această carte.";
+        return Json(response);
+    }
+
+    // Efectuăm împrumutul dacă toate verificările sunt trecute
+    book.QtyAvailable--;
+    Barrow borrowedBook = new Barrow
+    {
+        UserId = currentUserId,
+        BookName = book.BookName,
+        BookISBN = book.Isbn13,
+        BorrowDate = DateTime.Now,
+        ReturnDate = DateTime.Now.AddDays(14)
+    };
+
+    db.Barrows.Add(borrowedBook);
+    db.SaveChanges();
+
+    response.Success = true;
+    response.Message = "Cartea a fost împrumutată cu succes.";
+    return Json(response);
+}
+￼Enter
