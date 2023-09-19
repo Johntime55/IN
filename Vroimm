@@ -1,0 +1,64 @@
+<!-- Waitlist Confirmation Modal -->
+<div class="modal fade" id="waitlistConfirmModal" tabindex="-1" role="dialog" aria-labelledby="waitlistConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="waitlistConfirmModalLabel">Confirm Waitlist</h5>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to join the waitlist for this book?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">No</button>
+                <button type="button" class="btn btn-primary" onclick="addToWaitlist()">Yes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Waitlist Prompt Modal -->
+<div class="modal fade" id="waitlistPromptModal" tabindex="-1" role="dialog" aria-labelledby="waitlistPromptModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="waitlistPromptModalLabel">Waitlist Prompt</h5>
+            </div>
+            <div class="modal-body">
+                <p>The book has been successfully added to the waitlist.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript pentru Waitlist -->
+<script>
+    var isbn13ToWaitlist = "";
+
+    function joinWaitlist(isbn13) {
+        isbn13ToWaitlist = isbn13;
+        $('#waitlistConfirmModal').modal('show');
+    }
+
+    function addToWaitlist() {
+        $.ajax({
+            type: "POST",
+            url: "/Waitlist/Join",
+            data: { isbn13: isbn13ToWaitlist },
+            success: function (response) {
+                if (response.Success) {
+                    $('#waitlistConfirmModal').modal('hide');
+                    $('#waitlistPromptModal').modal('show');
+                    location.reload();
+                } else {
+                    // Poți gestiona cazurile de eroare aici
+                }
+            },
+            error: function () {
+                // Poți gestiona cazurile de eroare aici
+            }
+        });
+    }
+</script>
