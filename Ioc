@@ -1,0 +1,61 @@
+<div id="waitlistConfirmModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeWaitlistConfirmModal()">&times;</span>
+        <h2>Confirm Waitlist</h2>
+        <p>Are you sure you want to join the waitlist for this book?</p>
+        <div class="form-group">
+            <button type="button" onclick="confirmWaitlist()" class="btn btn-success">Yes</button>
+            <button type="button" onclick="closeWaitlistConfirmModal()" class="btn btn-secondary">No</button>
+        </div>
+    </div>
+</div>
+
+<div id="waitlistMessageModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeWaitlistMessageModal()">&times;</span>
+        <h2>Waitlist Status</h2>
+        <p id="waitlistMessage">This is a message about the waitlist status.</p>
+    </div>
+</div>
+
+
+
+// Funcție pentru deschiderea modalului de confirmare pentru Waitlist
+function openWaitlistConfirmModal(isbn13) {
+    // Setează isbn13 într-un atribut personalizat pentru a-l folosi mai târziu în funcția confirmWaitlist
+    $('#waitlistConfirmModal').attr('data-isbn13', isbn13);
+    $('#waitlistConfirmModal').modal('show');
+}
+
+// Funcție pentru închiderea modalului de confirmare pentru Waitlist
+function closeWaitlistConfirmModal() {
+    $('#waitlistConfirmModal').modal('hide');
+}
+
+// Funcție pentru confirmarea participării la Waitlist
+function confirmWaitlist() {
+    var isbn13 = $('#waitlistConfirmModal').data('isbn13');
+    
+    $.ajax({
+        type: "POST",
+        url: "/Waitlist/Join",
+        data: { isbn13: isbn13 },
+        success: function (response) {
+            $('#waitlistMessage').text(response.message);
+            $('#waitlistMessageModal').modal('show');
+            closeWaitlistConfirmModal();
+        },
+        error: function () {
+            // Tratează cazurile de eroare aici
+            $('#waitlistMessage').text('An error occurred.');
+            $('#waitlistMessageModal').modal('show');
+            closeWaitlistConfirmModal();
+        }
+    });
+}
+
+// Funcție pentru închiderea modalului cu mesaj de confirmare sau eroare pentru Waitlist
+function closeWaitlistMessageModal() {
+    $('#waitlistMessageModal').modal('hide');
+}
+￼Enter
