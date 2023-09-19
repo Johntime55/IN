@@ -1,0 +1,46 @@
+<!-- Modal pentru Confirmare Împrumut cu Succes -->
+<div class="modal fade" id="successBorrowModal" tabindex="-1" role="dialog" aria-labelledby="successBorrowModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="successBorrowModalLabel">Cartea a fost împrumutată cu succes</h5>
+            </div>
+            <div class="modal-body">
+                Cartea a fost împrumutată cu succes.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Închide</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+//Borrow
+function borrowBook(isbn13) {
+    $('#borrowModal').modal('show');
+
+    $('#confirmBorrowButton').click(function () {
+        $.ajax({
+            type: "POST",
+            url: "/BorrowBook/Borrow",
+            data: { isbn13: isbn13 },
+            success: function (response) {
+                if (response.Success) {
+                    $('#borrowModal').modal('hide'); // Închide modalul de confirmare pentru împrumut
+                    $('#successBorrowModal').modal('show'); // Afișează modalul de confirmare pentru împrumut cu succes
+                    location.reload();
+                } else {
+                    // Afișați aici un mesaj de eroare dacă este cazul.
+                }
+            },
+            error: function () {
+                // Afișați aici un mesaj de eroare dacă este cazul.
+            }
+        });
+    });
+
+    $('#borrowModal').on('hidden.bs.modal', function () {
+        $('#confirmBorrowButton').off('click');
+    });
+}
