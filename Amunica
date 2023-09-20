@@ -1,0 +1,62 @@
+<!-- Modal pentru Confirmare Creare Carte cu Succes -->
+<div class="modal fade" id="successModal" tabindex="-1" role="dialog" aria-labelledby="successModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="successModalLabel">Cartea a fost creată cu succes</h5>
+            </div>
+            <div class="modal-body">
+                Cartea a fost creată cu succes.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Închide</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript Create -->
+<script>
+    function openModal() {
+        document.getElementById("createModal").style.display = "block";
+    }
+
+    function closeModal() {
+        document.getElementById("createModal").style.display = "none";
+    }
+
+    function showSuccessModal(message) {
+        document.getElementById("successModalMessage").innerText = message;
+        $('#successModal').modal('show');
+    }
+
+    function createBook() {
+        var bookData = {
+            BookName: document.getElementById("BookName").value,
+            Author: document.getElementById("Author").value,
+            Isbn13: document.getElementById("Isbn13").value,
+            Isbn10: document.getElementById("Isbn10").value,
+            Publisher: document.getElementById("Publisher").value,
+            YearPublished: document.getElementById("YearPublished").value,
+            CoverImage: document.getElementById("CoverImage").value,
+            QtyAvailable: document.getElementById("QtyAvailable").value
+        };
+
+        $.ajax({
+            type: "POST",
+            url: "/Libraries/Create",
+            data: bookData,
+            success: function (response) {
+                if (response.success) {
+                    showSuccessModal("Cartea a fost creată cu succes!");
+                } else {
+                    alert("Eroare: " + response.message);
+                }
+            },
+            error: function (error) {
+                alert("A apărut o eroare: " + error.statusText);
+            }
+        });
+    }
+</script>
+￼Enter
