@@ -1,0 +1,90 @@
+<script>
+    var bookIdToEdit = 0;
+
+    function openEditModal(bookId) {
+        bookIdToEdit = bookId;
+        $.ajax({
+            type: "GET",
+            url: "/Libraries/GetBookDetails/" + bookId,
+            success: function (data) {
+                if (data.success) {
+                    var book = data.book;
+                    $("#BookName").val(book.BookName);
+                    $("#Author").val(book.Author);
+                    $("#Isbn13").val(book.Isbn13);
+                    $("#Isbn10").val(book.Isbn10);
+                    $("#Publisher").val(book.Publisher);
+                    $("#YearPublished").val(book.YearPublished);
+                    $("#CoverImage").val(book.CoverImage);
+                    $("#QtyAvailable").val(book.QtyAvailable);
+                    $("#editModal").css("display", "block");
+                } else {
+                    alert(data.message);
+                }
+            },
+            error: function (error) {
+                alert("An error occurred: " + error.statusText);
+            }
+        });
+    }
+
+    function closeEditModal() {
+        $("#editModal").css("display", "none");
+    }
+
+    function saveEdit() {
+        var editedData = {
+            id: bookIdToEdit,
+            BookName: $("#BookName").val(),
+            Author: $("#Author").val(),
+            Isbn13: $("#Isbn13").val(),
+            Isbn10: $("#Isbn10").val(),
+            Publisher: $("#Publisher").val(),
+            YearPublished: $("#YearPublished").val(),
+            CoverImage: $("#CoverImage").val(),
+            QtyAvailable: $("#QtyAvailable").val()
+        };
+
+        $.ajax({
+            type: "POST",
+            url: "/Libraries/Edit",
+            data: editedData,
+            success: function (response) {
+                if (response.success) {
+                    alert(response.message);
+                    closeEditModal();
+                    location.reload();
+                } else {
+                    alert(response.message);
+                }
+            },
+            error: function (error) {
+                alert("An error occurred: " + error.statusText);
+            }
+        });
+    }
+</script>
+
+[HttpPost]
+public JsonResult Edit([Bind(Include = "id,BookName,Author,Isbn13,Isbn10,Publisher,YearPublished,CoverImage,QtyAvailable")] Library library)
+{
+    if (ModelState.IsValid)
+    {
+        db.Entry(library).State = EntityState.Modified;
+
+        // Actualizăm detaliile în tabela BooksAvailables
+        var bookAvailable = db.BooksAvailables.FirstOrDefault(b => b.BookName == library.BookName);
+        if (bookAvailable != null)
+        {
+            bookAvailable.QtyAvailable = library.QtyAvailable;
+        }
+
+        db.SaveChanges();
+
+        return Json(new { success = true, message = "Book updated successfully", book = library });
+    }
+    return Json(new { success = false, message = "Validation failed" });
+}
+
+
+￼Enter
