@@ -1,0 +1,274 @@
+@model MyLibrary.Models.Library
+
+@{
+    ViewBag.Title = "Edit";
+}
+
+<div id="editModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <h2>Edit Book</h2>
+        @using (Html.BeginForm("Edit", "Libraries", FormMethod.Post, new { id = "editForm" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(model => model.id)
+
+            <!-- Completați toate câmpurile manual cu datele din model -->
+            <div class="form-group">
+                @Html.LabelFor(model => model.BookName)
+                @Html.EditorFor(model => model.BookName, new { htmlAttributes = new { @class = "form-control", id = "editBookName" } })
+            </div>
+            <div class="form-group">
+                @Html.LabelFor(model => model.Author)
+                @Html.EditorFor(model => model.Author, new { htmlAttributes = new { @class = "form-control", id = "editAuthor" } })
+            </div>
+            <!-- Completați celelalte câmpuri manual aici -->
+
+            <button type="button" class="btn btn-primary" onclick="saveEdit()">Save</button>
+            <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Close</button>
+        }
+    </div>
+</div>
+
+<!-- Restul conținutului pentru View -->
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}
+
+
+
+var bookIdToEdit = 0;
+
+function openEditModal(bookId) {
+    bookIdToEdit = bookId;
+    $.ajax({
+        type: "GET",
+        url: "/Libraries/GetBookDetails/" + bookId,
+        success: function (data) {
+            if (data.success) {
+                // Completați manual toate câmpurile cu datele cărții
+                $("#editBookName").val(data.book.BookName);
+                $("#editAuthor").val(data.book.Author);
+                // Completați celelalte câmpuri aici cu datele din model
+
+                $("#editModal").modal("show");
+            } else {
+                alert(data.message);
+            }
+        },
+        error: function (error) {
+            alert("An error occurred: " + error.statusText);
+        }
+    });
+}
+
+function closeEditModal() {
+    $("#editModal").modal("hide");
+}
+
+function saveEdit() {
+    // Obțineți datele din formularul de editare și efectuați solicitarea AJAX POST pentru a salva modificările
+    var editedData = {
+        id: bookIdToEdit,
+@model MyLibrary.Models.Library
+
+@{
+    ViewBag.Title = "Edit";
+}
+
+<div id="editModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <h2>Edit Book</h2>
+        @using (Html.BeginForm("Edit", "Libraries", FormMethod.Post, new { id = "editForm" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(model => model.id)
+
+            <!-- Completați toate câmpurile manual cu datele din model -->
+            <div class="form-group">
+                @Html.LabelFor(model => model.BookName)
+                @Html.EditorFor(model => model.BookName, new { htmlAttributes = new { @class = "form-control", id = "editBookName" } })
+            </div>
+            <div class="form-group">
+                @Html.LabelFor(model => model.Author)
+                @Html.EditorFor(model => model.Author, new { htmlAttributes = new { @class = "form-control", id = "editAuthor" } })
+            </div>
+            <!-- Completați celelalte câmpuri manual aici -->
+
+            <button type="button" class="btn btn-primary" onclick="saveEdit()">Save</button>
+            <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Close</button>
+        }
+    </div>
+</div>
+
+<!-- Restul conținutului pentru View -->
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}
+
+
+
+var bookIdToEdit = 0;
+
+function openEditModal(bookId) {
+    bookIdToEdit = bookId;
+    $.ajax({
+        type: "GET",
+        url: "/Libraries/GetBookDetails/" + bookId,
+        success: function (data) {
+            if (data.success) {
+                // Completați manual toate câmpurile cu datele cărții
+                $("#editBookName").val(data.book.BookName);
+                $("#editAuthor").val(data.book.Author);
+                // Completați celelalte câmpuri aici cu datele din model
+
+                $("#editModal").modal("show");
+            } else {
+                alert(data.message);
+            }
+        },
+        error: function (error) {
+            alert("An error occurred: " + error.statusText);
+        }
+    });
+}
+
+function closeEditModal() {
+    $("#editModal").modal("hide");
+}
+
+function saveEdit() {
+    // Obțineți datele din formularul de editare și efectuați solicitarea AJAX POST pentru a salva modificările
+    var editedData = {
+        id: bookIdToEdit,
+        BookName: $("#editBookName").val(),
+        Author: $("#editAuthor").val(),
+        // Obțineți celelalte câmpuri aici
+
+    };
+
+    $.ajax({
+        type: "POST",
+        url: "/Libraries/Edit",
+        data: editedData,
+        success: function (response) {
+            if (response.success) {
+                alert(response.message);
+                closeEditModal();
+                location.reload();
+            } else {
+                alert(response.message);
+            }
+        },
+        error: function (error) {
+            alert("An error occurred: " + error.statusText);
+        }
+    });
+}
+
+// GET: Libraries/GetBookDetails/5
+[HttpGet]
+public JsonResult GetBookDetails(int id)
+{
+    var book = db.Libraries.Find(id);
+    if (book == null)
+    {
+        return Json(new { success = false, message = "Book not found." }, JsonRequestBehavior.AllowGet);
+    }
+
+    return Json(new { success = true, book = book }, JsonRequestBehavior.AllowGet);
+}
+
+// POST: Libraries/Edit/5
+// To protect from overposting attacks, enable the specific properties you want to bind to, for 
+// more details see https://go.microsoft.com/fwlink/?LinkId=317598.
+[HttpPost]
+[ValidateAntiForgeryToken]
+public JsonResult Edit([Bind(Include = "id,BookName,Author,Isbn13,Isbn10,Publisher,YearPublished,CoverImage,QtyAvailable")] Library library)
+{
+    if (ModelState.IsValid)
+    {
+        db.Entry(library).State = EntityState.Modified;
+        db.SaveChanges();
+
+        // Actualizam detaliile in tabela BooksAvailables
+        var bookAvailable = db.BooksAvailables.FirstOrDefault(b => b.BookName == library.BookName);
+        if (bookAvailable != null)
+        {
+            bookAvailable.QtyAvailable = library.QtyAvailable;
+            db.SaveChanges();
+        }
+
+        return Json(new { success = true, message = "Book updated successfully", book = library });
+    }
+    
+    return Json(new { success = false, message = "Validation failed" });
+}
+
+
+
+
+<!-- Adaugati aceste butoane in lista dvs. de carti din View -->
+@foreach (var book in Model) {
+    <tr>
+        <td>@book.BookName</td>
+        <!-- Alte coloane -->
+        <td>
+            <button type="button" class="btn btn-primary" onclick="openEditModal(@book.id)">Edit</button>
+            <!-- Alte butoane sau actiuni -->
+        </td>
+    </tr>
+}
+￼Enter        BookName: $("#editBookName").val(),
+        Author: $("#editAuthor").val(),
+        // Obțineți celelalte câmpuri aici
+
+    };
+
+    $.ajax({
+        type: "POST",
+        url: "/Libraries/Edit",
+        data: editedData,
+        success: function (response) {
+            if (response.success) {
+                alert(response.message);
+                closeEditModal();
+                location.reload();
+            } else {
+                alert(response.message);
+            }
+        },
+        error: function (error) {
+            alert("An error occurred: " + error.statusText);
+        }
+    });
+}
+
+// GET: Libraries/GetBookDetails/5
+et]
+public JsonResult GetBookDetails(int id)
+{
+    var book = db.Libraries.Find(id);
+    if (book == null)
+    {
+        return Json(new { success = false, message = "Book not found." }, JsonRequestBehavior.AllowGet);
+    }
+
+    return Json(new { success = true, book = book }, JsonRequestBehavior.AllowGet);
+}
+
+// POST: Libraries/Edit/5
+// To protect from overposting attacks, enable the specific properties you want to bind to, for 
+// more details see https://go.microsoft.com/fwlink/?LinkId=317598.
+[HttpPost]
+[ValidateAntiForgeryToken]
+public JsonResult Edit([Bind(Include = "id,BookName,Author,Isbn13,Isbn10,Publisher,YearPublished,CoverImage,QtyAvailable")] Library library)
+{
+    if (ModelState.IsValid)
+    {
+        db.Entry(library).State = EntityState.Modified;
+        db.SaveChanges();
+
+        // Actualizam detaliile in tabela BooksAvailables
+        var bookAvailable = db.BooksAvailables.FirstOrDefault(b => b.BookName == library.BookName);
