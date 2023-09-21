@@ -1,0 +1,54 @@
+// GET: Libraries/GetBookDetails/5
+[HttpGet]
+public JsonResult GetBookDetails(int id)
+{
+    var book = db.Libraries.Find(id);
+    if (book == null)
+    {
+        return Json(new { success = false, message = "Book not found." }, JsonRequestBehavior.AllowGet);
+    }
+
+    return Json(new { success = true, book = book }, JsonRequestBehavior.AllowGet);
+}
+
+// POST: Libraries/Edit/5
+// To protect from overposting attacks, enable the specific properties you want to bind to, for 
+// more details see https://go.microsoft.com/fwlink/?LinkId=317598.
+[HttpPost]
+[ValidateAntiForgeryToken]
+public JsonResult Edit([Bind(Include = "id,BookName,Author,Isbn13,Isbn10,Publisher,YearPublished,CoverImage,QtyAvailable")] Library library)
+{
+    if (ModelState.IsValid)
+    {
+        db.Entry(library).State = EntityState.Modified;
+        db.SaveChanges();
+
+        // Actualizam detaliile in tabela BooksAvailables
+        var bookAvailable = db.BooksAvailables.FirstOrDefault(b => b.BookName == library.BookName);
+        if (bookAvailable != null)
+        {
+            bookAvailable.QtyAvailable = library.QtyAvailable;
+            db.SaveChanges();
+        }
+
+        return Json(new { success = true, message = "Book updated successfully", book = library });
+    }
+    
+    return Json(new { success = false, message = "Validation failed" });
+}
+
+
+
+
+<!-- Adaugati aceste butoane in lista dvs. de carti din View -->
+@foreach (var book in Model) {
+    <tr>
+        <td>@book.BookName</td>
+        <!-- Alte coloane -->
+        <td>
+            <button type="button" class="btn btn-primary" onclick="openEditModal(@book.id)">Edit</button>
+            <!-- Alte butoane sau actiuni -->
+        </td>
+    </tr>
+}
+￼Enter
